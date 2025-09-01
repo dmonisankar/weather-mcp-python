@@ -195,7 +195,7 @@ urllib3==2.5.0
 uvicorn==0.34.2
 virtualenv==20.26.3
 wcwidth==0.2.13
--e git+https://github.com/dmonisankar/weather-mcp-python.git@f2957f9221671d19e45ebaf5f2b10d03e0adb4c3#egg=weather_mcp_python
+-e git+https://github.com/dmonisankar/weather-mcp-python.git@200807740bda60fc02bdf9f9952277b9adc81124#egg=weather_mcp_python
 webcolors==24.11.1
 webencodings==0.5.1
 websocket-client==1.8.0
