@@ -30,12 +30,11 @@ dep-logic==0.4.4
 distlib==0.3.8
 distro==1.9.0
 docstring_parser==0.16
-dotenv==0.9.9
 dydantic==0.0.8
 exceptiongroup==1.3.0
 executing==2.2.0
 fastjsonschema==2.21.1
-fastmcp==2.2.0
+fastmcp
 filelock==3.15.4
 findpython==0.6.1
 fqdn==1.5.1
@@ -51,9 +50,8 @@ httpcore==1.0.5
 httplib2==0.22.0
 httpx==0.28.1
 httpx-sse==0.4.0
-ibm-cloud-sdk-core==3.24.2
+ibm-cloud-sdk-core
 ibm-watsonx-orchestrate==1.8.1
-ibm-watsonx-orchestrate-evaluation-framework==1.0.8
 identify==2.6.7
 idna==3.7
 iniconfig==2.1.0
@@ -65,7 +63,6 @@ jedi==0.19.2
 Jinja2==3.1.5
 jiter==0.8.2
 json5==0.10.0
-jsonargparse==4.37.0
 jsonpatch==1.33
 jsonpointer==3.0.0
 jsonref==1.1.0
@@ -95,8 +92,7 @@ markdown-it-py==3.0.0
 MarkupSafe==3.0.2
 marshmallow==3.26.0
 matplotlib-inline==0.1.7
-mcp==1.8.1
--e git+ssh://git@github.ibm.com/advantage-mcp/mcp_google_search.git@106d556f4cc4b2ae417238e77631ece85b37df9b#egg=mcp_google_search
+mcp
 mdurl==0.1.2
 mistune==3.1.1
 msgpack==1.1.0
@@ -145,16 +141,14 @@ pyproject_hooks==1.1.0
 pytest==8.3.5
 pytest-asyncio==0.26.0
 python-dateutil==2.9.0.post0
-python-dotenv==1.0.1
+python-dotenv
 python-json-logger==3.2.1
 python-multipart==0.0.20
-pytz==2025.2
 PyYAML==6.0.2
 pyzmq==26.2.1
-redis==6.4.0
 referencing==0.36.2
 regex==2024.11.6
-requests==2.32.4
+requests
 requests-toolbelt==1.0.0
 resolvelib==1.0.1
 rfc3339-validator==0.1.4
@@ -191,11 +185,10 @@ typing_extensions==4.12.2
 unearth==0.16.1
 uri-template==1.3.0
 uritemplate==4.1.1
-urllib3==2.5.0
+urllib3
 uvicorn==0.34.2
 virtualenv==20.26.3
 wcwidth==0.2.13
--e git+https://github.com/dmonisankar/weather-mcp-python.git@200807740bda60fc02bdf9f9952277b9adc81124#egg=weather_mcp_python
 webcolors==24.11.1
 webencodings==0.5.1
 websocket-client==1.8.0
