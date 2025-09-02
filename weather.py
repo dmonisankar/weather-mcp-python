@@ -1,9 +1,13 @@
 from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
+import os
 
-# Initialize FastMCP server
-mcp = FastMCP("weather")
+# Initialize FastMCP server with proper configuration
+mcp = FastMCP(
+    "weather",
+    sse_endpoint="/sse" if os.environ.get('CODE_ENGINE') or os.environ.get('CE_SERVICES') else None
+)
 
 # Constants
 NWS_API_BASE = "https://api.weather.gov"

@@ -40,9 +40,31 @@ MCP Weather is a Python application that serves as an MCP tool, allowing AI assi
 
 ### Running as an MCP Service
 
-To test the server, run 
-```
+#### Local Development (stdio mode)
+To test the server locally with stdio transport:
+```bash
 uv run weather.py
+```
+
+#### Server Mode (SSE for production)
+To run the server in SSE mode for production deployment:
+```bash
+CODE_ENGINE=true uv run start.py
+```
+
+The server will run on port 8080 and provide:
+- Health check at `/health`
+- Service info at `/`
+- SSE endpoint at `/sse` for MCP protocol
+
+#### Testing SSE Connection
+To test the SSE functionality:
+```bash
+# Install test dependencies
+uv sync --extra test
+
+# Run the test script
+uv run test_sse.py
 ```
 
 If the server runs successfully without errors, you can make the tool available with the following command:
@@ -66,6 +88,27 @@ Retrieves a detailed weather forecast for a specific location.
 Parameters:
 - `latitude`: Latitude of the location
 - `longitude`: Longitude of the location
+
+## Deployment
+
+### IBM Cloud Code Engine
+
+This MCP server is designed to be deployed on IBM Cloud Code Engine using Server-Sent Events (SSE) transport. See the deployment files:
+
+- `DEPLOYMENT.md` - Comprehensive deployment guide
+- `deploy.sh` - Automated deployment script
+- `Dockerfile` - Container configuration
+- `code-engine-app.yaml` - Code Engine application configuration
+
+Quick deployment:
+```bash
+./deploy.sh
+```
+
+### Transport Modes
+
+- **stdio**: For local development and MCP client integration
+- **SSE**: For production deployment on Code Engine and web-based access
 
 ## API Reference
 

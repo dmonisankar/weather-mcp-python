@@ -9,4 +9,13 @@ dependencies = [
     "mcp[cli]<=1.10.3",
     "fastmcp",
     "ibm-watsonx-orchestrate==1.8.1",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "aiohttp>=3.8.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
 ]
