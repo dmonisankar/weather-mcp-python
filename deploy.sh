@@ -8,7 +8,7 @@ set -e
 PROJECT_NAME="weather-mcp-project"
 APP_NAME="weather-mcp-server"
 IMAGE_NAME="weather-mcp-python"
-REGISTRY_NAMESPACE="your-registry-namespace"  # Update this with your container registry namespace
+REGISTRY_NAMESPACE="weather-mcp-dmonisankar"  # Personal namespace for this deployment
 
 echo "🚀 Deploying Weather MCP Server to IBM Cloud Code Engine"
 
@@ -51,14 +51,53 @@ fi
 echo "🔨 Building and pushing container image..."
 
 # Get the registry endpoint for your region
-REGISTRY_ENDPOINT=$(ibmcloud cr region)
+REGISTRY_INFO=$(ibmcloud cr region)
+# Extract just the registry URL (e.g., "icr.io" from the output)
+REGISTRY_ENDPOINT=$(echo "$REGISTRY_INFO" | grep -o "icr\.io\|us\.icr\.io\|eu\.icr\.io\|ap\.icr\.io\|uk\.icr\.io\|jp\.icr\.io" | head -1)
+
+# Fallback to global registry if none found
+if [ -z "$REGISTRY_ENDPOINT" ]; then
+    REGISTRY_ENDPOINT="icr.io"
+fi
+
 FULL_IMAGE_NAME="${REGISTRY_ENDPOINT}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:latest"
 
-echo "📦 Building Docker image..."
+echo "� Registry endpoint: $REGISTRY_ENDPOINT"
+echo "📋 Full image name: $FULL_IMAGE_NAME"
+
+echo "�📦 Building Docker image..."
 docker build -t "$FULL_IMAGE_NAME" .
 
 echo "📤 Pushing image to IBM Cloud Container Registry..."
 docker push "$FULL_IMAGE_NAME"
+
+# Create registry secret for accessing IBM Cloud Container Registry
+echo "🔐 Setting up registry secret for image pull access..."
+SECRET_NAME="icr-secret"
+
+# Check if secret already exists
+if ! ibmcloud ce secret get --name "$SECRET_NAME" &> /dev/null; then
+    echo "� Creating registry secret..."
+    # Create a unique API key name
+    API_KEY_NAME="weather-mcp-registry-$(date +%s)"
+    
+    # Create API key and registry secret in one command
+    echo "📝 Creating API key and registry secret..."
+    API_KEY=$(ibmcloud iam api-key-create "$API_KEY_NAME" --output json | jq -r '.apikey')
+    
+    if [ -n "$API_KEY" ] && [ "$API_KEY" != "null" ]; then
+        ibmcloud ce secret create --name "$SECRET_NAME" --format registry \
+            --server "$REGISTRY_ENDPOINT" \
+            --username iamapikey \
+            --password "$API_KEY"
+        echo "✅ Registry secret created successfully"
+    else
+        echo "❌ Failed to create API key. Please check your permissions."
+        exit 1
+    fi
+else
+    echo "✅ Registry secret already exists"
+fi
 
 # Deploy the application
 echo "🚀 Deploying application to Code Engine..."
@@ -67,6 +106,7 @@ if ibmcloud ce app get --name "$APP_NAME" &> /dev/null; then
     ibmcloud ce app update \
         --name "$APP_NAME" \
         --image "$FULL_IMAGE_NAME" \
+        --registry-secret "$SECRET_NAME" \
         --port 8000 \
         --env CODE_ENGINE=true \
         --cpu 0.25 \
@@ -78,6 +118,7 @@ else
     ibmcloud ce app create \
         --name "$APP_NAME" \
         --image "$FULL_IMAGE_NAME" \
+        --registry-secret "$SECRET_NAME" \
         --port 8000 \
         --env CODE_ENGINE=true \
         --cpu 0.25 \
