@@ -22,13 +22,10 @@ ENV PATH="/root/.local/bin:$PATH"
 
 # Copy application code
 COPY weather.py ./
-COPY sse_server.py ./
 
 # Expose port (Code Engine will use this)
 EXPOSE 8000
 
-# Create a startup script that can handle both HTTP and stdio modes
-COPY start.py ./
 
 # Use the startup script as the entry point
-CMD ["uv", "run", "start.py"]
+CMD ["uv", "run", "weather.py"]

@@ -5,8 +5,7 @@ import os
 
 # Initialize FastMCP server with proper configuration
 mcp = FastMCP(
-    "weather",
-    sse_endpoint="/sse" if os.environ.get('CODE_ENGINE') or os.environ.get('CE_SERVICES') else None
+    "weather"
 )
 
 # Constants
@@ -99,5 +98,4 @@ async def get_forecast(latitude: float, longitude: float) -> str:
 if __name__ == "__main__":
     # Initialize and run the server
     print("Weather MCP server running")
-    mcp.run(transport='stdio')
-    
+    mcp.run(transport='sse')
