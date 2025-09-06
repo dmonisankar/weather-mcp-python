@@ -2,12 +2,31 @@
 
 This comprehensive guide provides detailed step-by-step instructions for deploying the Weather MCP Server to IBM Cloud Code Engine.
 
+## Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Install IBM Cloud CLI](#step-1-install-ibm-cloud-cli)
+3. [Install Required Plugins](#step-2-install-required-plugins)
+4. [Login to IBM Cloud](#step-3-login-to-ibm-cloud)
+5. [Set Target Region and Resource Group](#step-4-set-target-region-and-resource-group)
+6. [Configure IBM Cloud Container Registry](#step-5-configure-ibm-cloud-container-registry)
+7. [Build and Push Docker Image](#step-6-build-and-push-docker-image)
+8. [Deploy to Code Engine](#step-7-deploy-to-code-engine)
+9. [Verify Deployment](#step-8-verify-deployment)
+10. [Test with MCP Inspector](#step-9-test-with-mcp-inspector)
+11. [Troubleshooting](#troubleshooting)
+12. [Monitoring and Management](#monitoring-and-management)
+13. [Summary](#summary)
+
 ## Prerequisites
 
 Before starting the deployment, ensure you have:
 
 1. **IBM Cloud Account**: [Sign up here](https://cloud.ibm.com/registration) if you don't have one
-2. **Docker Desktop**: [Download here](https://www.docker.com/products/docker-desktop/)
+2. **Container Runtime** (choose one):
+   - **Docker Desktop**: [Download here](https://www.docker.com/products/docker-desktop/) (Recommended for beginners)
+   - **Colima**: [Install via Homebrew](https://github.com/abiosoft/colima) - `brew install colima` (Lightweight alternative for macOS/Linux)
+   - **Rancher Desktop**: [Download here](https://rancherdesktop.io/) (Open-source alternative with Kubernetes support)
 3. **IBM Cloud CLI**: Will be installed in Step 1
 4. **Local development environment** with:
    - Python 3.11+
@@ -113,66 +132,9 @@ ibmcloud cr region
 
 Note the registry endpoint (e.g., `us.icr.io` for US South).
 
-## Step 6: Update Deployment Configuration
+## Step 6: Build and Push Docker Image
 
-### 6.1 Edit deploy.sh
-Open `deploy.sh` in your editor and locate line 11:
-```bash
-REGISTRY_NAMESPACE="your-registry-namespace"
-```
-
-Replace with your actual namespace:
-```bash
-REGISTRY_NAMESPACE="weather-mcp-dev"  # Use your namespace from Step 5.2
-```
-
-### 6.2 Make Script Executable
-```bash
-chmod +x deploy.sh
-```
-
-## Step 7: Deploy the Application
-
-### Option A: Automated Deployment (Recommended)
-
-Run the deployment script:
-```bash
-./deploy.sh
-```
-
-The script will automatically:
-1. Create/select a Code Engine project named `weather-mcp-project`
-2. Build the Docker image locally
-3. Push the image to IBM Cloud Container Registry
-4. Deploy the application to Code Engine
-5. Display the application URL
-
-Expected output:
-```
-🚀 Deploying Weather MCP Server to IBM Cloud Code Engine
-📋 Current resource group: Default
-🏗️  Setting up Code Engine project...
-📦 Building Docker image...
-📤 Pushing image to IBM Cloud Container Registry...
-🚀 Deploying application to Code Engine...
-✅ Deployment completed successfully!
-🌐 Application URL: https://weather-mcp-server.xxxxx.us-south.codeengine.appdomain.cloud
-```
-
-### Option B: Manual Deployment
-
-If you prefer to deploy manually or the script fails:
-
-#### 7.1 Create Code Engine Project
-```bash
-# Create a new project
-ibmcloud ce project create --name weather-mcp-project
-
-# Select the project
-ibmcloud ce project select --name weather-mcp-project
-```
-
-#### 7.2 Build Docker Image
+### 6.1 Build Docker Image
 ```bash
 # Get your registry endpoint
 REGISTRY=$(ibmcloud cr region | grep -oE '[a-z]+\.icr\.io')
@@ -182,12 +144,23 @@ NAMESPACE="YOUR_NAMESPACE"  # Replace with your namespace
 docker build -t ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest .
 ```
 
-#### 7.3 Push Image to Registry
+### 6.2 Push Image to Registry
 ```bash
 docker push ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest
 ```
 
-#### 7.4 Deploy to Code Engine
+## Step 7: Deploy to Code Engine
+
+### 7.1 Create Code Engine Project
+```bash
+# Create a new project
+ibmcloud ce project create --name weather-mcp-project
+
+# Select the project
+ibmcloud ce project select --name weather-mcp-project
+```
+
+### 7.2 Deploy Application to Code Engine
 ```bash
 ibmcloud ce app create \
   --name weather-mcp-server \
@@ -213,41 +186,130 @@ ibmcloud ce app get --name weather-mcp-server
 # Look for the URL in the output
 ```
 
-### 8.2 Test the Endpoints
-
-Test health endpoint:
-```bash
-curl https://YOUR_APP_URL/health
-```
-
-Expected response:
-```json
-{"status": "healthy", "service": "weather-mcp"}
-```
-
-Test info endpoint:
-```bash
-curl https://YOUR_APP_URL/
-```
-
-Expected response:
-```json
-{
-  "name": "Weather MCP Server",
-  "version": "0.1.0",
-  "description": "MCP server providing weather information via NWS API",
-  "transport": "sse",
-  "endpoints": {
-    "health": "/health",
-    "info": "/",
-    "sse": "/sse"
-  }
-}
-```
-
-### 8.3 View Application Logs
+### 8.2 View Application Logs
 ```bash
 ibmcloud ce app logs --name weather-mcp-server --follow
+```
+
+## Step 9: Test with MCP Inspector
+
+MCP Inspector is a powerful tool for testing and debugging MCP (Model Context Protocol) servers. It allows you to interactively explore your server's capabilities, test tools, and validate the implementation.
+
+### 9.1 Install MCP Inspector
+
+#### Option 1: Install via npm (Recommended)
+```bash
+npm install -g @modelcontextprotocol/inspector
+```
+
+#### Option 2: Use npx (No installation required)
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+### 9.2 Get Your Server URL
+
+First, get your deployed application URL:
+```bash
+APP_URL=$(ibmcloud ce app get --name weather-mcp-server --output json | jq -r '.status.url')
+echo "Your MCP Server URL: ${APP_URL}"
+```
+
+### 9.3 Launch MCP Inspector
+
+Start the MCP Inspector:
+```bash
+mcp-inspector
+```
+
+This will:
+1. Start a local web interface (typically at `http://localhost:5173`)
+2. Open your browser automatically
+3. Present a connection interface
+
+### 9.4 Connect to Your Deployed Server
+
+In the MCP Inspector interface:
+
+1. **Enter Server URL**: Use your deployed server's SSE endpoint:
+   ```
+   https://YOUR_APP_URL/sse
+   ```
+2. **Select Transport**: Choose "Server-Sent Events (SSE)"
+3. **Click Connect**: The inspector will establish a connection
+
+### 9.5 Expected Test Results
+
+When testing with MCP Inspector, you should see:
+
+1. **Server Initialization**: Successful handshake with protocol version confirmation
+2. **Available Tools**:
+   - `get_current_weather`: Get current weather conditions for a location
+   - `get_weather_forecast`: Get weather forecast for specified days
+3. **Tool Responses**: Valid weather data from the National Weather Service API
+4. **Error Handling**: Proper error responses for invalid inputs
+
+### 9.6 Interactive Testing with MCP Inspector
+
+The MCP Inspector provides a comprehensive web-based interface for testing:
+
+#### Connection Tab
+- **Server Status**: Displays connection status and server information
+- **Protocol Version**: Shows the MCP protocol version being used
+- **Capabilities**: Lists server and client capabilities
+
+#### Tools Tab  
+- **Available Tools**: Browse all tools provided by your server
+- **Tool Schemas**: View input parameters and expected outputs
+- **Test Execution**: Run tools with custom parameters
+- **Response Viewer**: See formatted tool responses
+
+![tools list](./asset/mcp-inspector-list-tools.png)
+
+#### Testing Your Weather Tools
+
+1. **Test get_alerts**:
+   - Select the tool from the list
+   - Enter a location (e.g., "CA")
+   - Execute and view the weather data response
+
+![tool: get_alerts](./asset/mcp-inpsector-get-alerts.png)
+
+2. **Test get_weather_forecast**:
+   - Select the tool from the list  
+   - Enter latitude and longitude ( e.g. 37.25, -119.75)
+   - Execute and view the forecast data. 
+
+![tool: get_forecast](./asset/mcp-inspector-get-forecast.png)
+
+#### Debugging Features
+- **Request/Response Log**: Monitor all MCP protocol messages
+- **Error Handling**: View detailed error messages for failed requests
+- **Performance Metrics**: Check response times and connection stability
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Refused
+```bash
+# Verify your app is running
+ibmcloud ce app get --name weather-mcp-server
+
+# Check app logs for errors
+ibmcloud ce app logs --name weather-mcp-server --tail 20
+```
+
+#### App Not Responding
+```bash
+# Restart the application
+ibmcloud ce app update --name weather-mcp-server --image ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest
+```
+
+#### Resource Constraints
+```bash
+# Scale up resources if needed
+ibmcloud ce app update --name weather-mcp-server --cpu 0.5 --memory 1G
 ```
 
 ## Monitoring and Management
@@ -263,9 +325,15 @@ ibmcloud ce app logs --name weather-mcp-server
 ```
 
 ### Update Application
+After making changes, rebuild and redeploy:
 ```bash
-# After making changes, rebuild and update
-./deploy.sh
+# Rebuild image
+docker build -t ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest .
+docker push ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest
+
+# Update the application
+ibmcloud ce app update --name weather-mcp-server \
+  --image ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest
 ```
 
 ### Scale Application
@@ -278,146 +346,54 @@ ibmcloud ce app update --name weather-mcp-server --min-scale 1 --max-scale 20
 ibmcloud ce app delete --name weather-mcp-server
 ```
 
-## Testing the Deployment
-
-Once deployed, you can test the application:
-
-1. **Health Check**: Visit `https://your-app-url/health`
-2. **Service Info**: Visit `https://your-app-url/` for service details
-3. **SSE Connection**: Connect to `https://your-app-url/sse` for MCP protocol over SSE
-
-## API Usage
-
-The deployed service provides the following endpoints:
-
-- `GET /` - Service information and available endpoints
-- `GET /health` - Health check
-- `GET /sse` - Server-Sent Events endpoint for MCP protocol
-- MCP Tools via SSE: `get_alerts`, `get_forecast`
-
-Example SSE connection:
-```javascript
-const eventSource = new EventSource('https://your-app-url/sse');
-eventSource.onmessage = function(event) {
-    console.log('Received:', event.data);
-};
-```
-
-## Troubleshooting Guide
-
-### Issue 1: Docker push fails with authentication error
-**Error Message:** `unauthorized: authentication required`
-
-**Solution:**
+### Delete Project (Clean Up)
 ```bash
-# Re-login to container registry
-ibmcloud cr login
-
-# Verify Docker is configured correctly
-docker pull hello-world
-
-# If still failing, check your registry endpoint
-ibmcloud cr region
+ibmcloud ce project delete --name weather-mcp-project
 ```
 
-### Issue 2: "Namespace not found" error
-**Error Message:** `The specified namespace was not found`
+## Summary
 
-**Solution:**
-```bash
-# List your namespaces
-ibmcloud cr namespaces
+Congratulations! You have successfully completed the full deployment process:
 
-# Create namespace if it doesn't exist
-ibmcloud cr namespace-add YOUR_NAMESPACE
-```
+### ✅ What You've Accomplished
 
-### Issue 3: Application fails to start
-**Symptoms:** Application shows as "Failed" or keeps restarting
+1. **Environment Setup**
+   - Installed and configured IBM Cloud CLI
+   - Set up required plugins for Code Engine and Container Registry
+   - Configured authentication and target settings
 
-**Solution:**
-```bash
-# Check application logs
-ibmcloud ce app logs --name weather-mcp-server --all
+2. **Container Registry Configuration**
+   - Created a namespace for your Docker images
+   - Built and pushed your Weather MCP Server container
 
-# Check events for errors
-ibmcloud ce app events --name weather-mcp-server
+3. **Code Engine Deployment**
+   - Created a Code Engine project
+   - Deployed your application with proper configuration
+   - Set up scaling and resource allocation
 
-# Common fixes:
-# 1. Verify port is set to 8000
-# 2. Check CODE_ENGINE environment variable is set
-# 3. Ensure image was pushed successfully
-```
+4. **Verification and Testing**
+   - Verified deployment connectivity
+   - Tested with MCP Inspector for full protocol validation
+   - Confirmed weather tools are working correctly
 
-### Issue 4: Cannot access application URL
-**Symptoms:** URL returns 404 or connection refused
+5. **Operations Knowledge**
+   - Learned monitoring and logging techniques
+   - Understood update and scaling procedures
+   - Know how to troubleshoot common issues
 
-**Solution:**
-```bash
-# Verify app is running
-ibmcloud ce app list
+### 🚀 Your Weather MCP Server is Now Live
 
-# Check if URL is assigned
-ibmcloud ce app get --name weather-mcp-server
+Your Weather MCP Server is now running on IBM Cloud Code Engine and ready for integration with:
+- MCP-compatible AI applications
+- Claude Desktop and other AI assistants
+- Custom applications using the Model Context Protocol
+- Development and testing workflows
 
-# If min-scale is 0, the app might be scaled down
-# Force at least one instance to run:
-ibmcloud ce app update --name weather-mcp-server --min-scale 1
-```
 
-### Issue 5: "Project not found" error
-**Error Message:** `Project 'weather-mcp-project' not found`
 
-**Solution:**
-```bash
-# List all projects
-ibmcloud ce project list
+## Additional Resources
 
-# Create the project if it doesn't exist
-ibmcloud ce project create --name weather-mcp-project
-
-# Select the project
-ibmcloud ce project select --name weather-mcp-project
-```
-
-### Issue 6: Build fails on M1/M2 Mac
-**Symptoms:** Docker build fails with platform errors
-
-**Solution:**
-```bash
-# Build with platform flag
-docker buildx build --platform linux/amd64 \
-  -t ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest .
-
-# Push the image
-docker push ${REGISTRY}/${NAMESPACE}/weather-mcp-python:latest
-```
-
-### Resource Limits
-
-If you encounter resource limits:
-- Increase CPU/memory allocations
-- Adjust scaling parameters
-- Check your IBM Cloud service plan limits
-
-## Cost Optimization
-
-- Use `min-scale 0` for automatic scale-to-zero when not in use
-- Monitor usage with IBM Cloud monitoring
-- Set appropriate CPU/memory limits
-- Consider using reserved capacity for predictable workloads
-
-## Security Considerations
-
-- The application only accesses public NWS APIs
-- No sensitive data is stored
-- HTTPS is enforced by Code Engine
-- Consider adding authentication for production use
-
-## Next Steps
-
-- Add monitoring and alerting
-- Implement caching for better performance
-- Add rate limiting
-- Set up CI/CD pipeline for automatic deployments
-- Add custom domain if needed
+- [IBM Cloud Code Engine Documentation](https://cloud.ibm.com/docs/codeengine)
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/docs)
+- [MCP Inspector Documentation](https://github.com/modelcontextprotocol/inspector)
+- [National Weather Service API](https://www.weather.gov/documentation/services-web-api)
