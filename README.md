@@ -1,113 +1,93 @@
 
-# MCP Weather
+# Weather MCP Server
 
-A weather information service built with the Model Control Protocol (MCP) framework that provides access to National Weather Service (NWS) data.
-
-## Overview
-
-MCP Weather is a Python application that serves as an MCP tool, allowing AI assistants to access real-time weather information from the National Weather Service API. The service provides two main functionalities:
-
-1. **Weather Alerts**: Get active weather alerts for any US state
-2. **Weather Forecasts**: Get detailed weather forecasts for any location in the US by latitude and longitude
+A Model Context Protocol (MCP) server providing weather data from the National Weather Service API.
 
 ## Features
 
-- Retrieve active weather alerts by US state code
-- Get detailed weather forecasts for specific locations
-- Clean, formatted output for easy reading
-- Built as an MCP tool for seamless integration with AI assistants
+- **Weather Alerts**: Get active alerts for any US state
+- **Weather Forecasts**: Get detailed forecasts by coordinates
+- MCP-compatible for AI assistant integration
+- Server-Sent Events (SSE) transport mode
+- Production-ready deployment on IBM Cloud Code Engine
 
-## Requirements
+## Quick Start
 
-- Python 3.11 or higher
-- Dependencies:
-  - httpx
-  - mcp[cli]
+### Prerequisites
+- Python 3.11+
+- `uv` package manager
 
-## Installation
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/dmonisankar/weather-mcp-python.git
-   cd weather-mcp-python
-   ```
-2. You will need the python package manager `uv` to run the server
-   ```
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-
-## Usage
-
-### Running as an MCP Service
-
-#### Local Development (stdio mode)
-To test the server locally with stdio transport:
+### Installation
 ```bash
+git clone https://github.com/dmonisankar/weather-mcp-python.git
+cd weather-mcp-python
+
+# Install uv package manager
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Run Locally
+```bash
+# Run the MCP server (SSE transport)
 uv run weather.py
 ```
 
-#### Server Mode (SSE for production)
-To run the server in SSE mode for production deployment:
-```bash
-CODE_ENGINE=true uv run start.py
-```
+The server will start on port 8000 with SSE transport and provide:
+- SSE endpoint at `/sse` for MCP protocol communication
 
-The server will run on port 8080 and provide:
-- Health check at `/health`
-- Service info at `/`
-- SSE endpoint at `/sse` for MCP protocol
+## Available Tools
 
-#### Testing SSE Connection
-To test the SSE functionality:
-```bash
-# Install test dependencies
-uv sync --extra test
+### get_alerts
+Get active weather alerts for a US state.
+- **Parameter**: `state` (string) - Two-letter state code (e.g., "CA", "NY")
 
-# Run the test script
-uv run test_sse.py
-```
-
-If the server runs successfully without errors, you can make the tool available with the following command:
-```
-PATH/uv --directory ABSOLUTE_PATH/weather-mcp-python run weather.py
-```
-
-### Available Tools
-
-#### Get Weather Alerts
-
-Retrieves active weather alerts for a specified US state.
-
-Parameters:
-- `state`: Two-letter US state code (e.g., CA, NY)
-
-#### Get Weather Forecast
-
-Retrieves a detailed weather forecast for a specific location.
-
-Parameters:
-- `latitude`: Latitude of the location
-- `longitude`: Longitude of the location
+### get_forecast  
+Get weather forecast for specific coordinates.
+- **Parameters**: 
+  - `latitude` (float) - Location latitude
+  - `longitude` (float) - Location longitude
 
 ## Deployment
 
 ### IBM Cloud Code Engine
+Deploy to production using IBM Cloud Code Engine with Docker containers and SSE transport.
 
-This MCP server is designed to be deployed on IBM Cloud Code Engine using Server-Sent Events (SSE) transport. See the deployment files:
-
-- `DEPLOYMENT.md` - Comprehensive deployment guide
-- `deploy.sh` - Automated deployment script
-- `Dockerfile` - Container configuration
-- `code-engine-app.yaml` - Code Engine application configuration
-
-Quick deployment:
+**Quick Deploy:**
 ```bash
-./deploy.sh
+# Build and push container
+docker build -t us.icr.io/YOUR_NAMESPACE/weather-mcp-python:latest .
+docker push us.icr.io/YOUR_NAMESPACE/weather-mcp-python:latest
+
+# Deploy to Code Engine
+ibmcloud ce app create \
+  --name weather-mcp-server \
+  --image us.icr.io/YOUR_NAMESPACE/weather-mcp-python:latest \
+  --port 8000
 ```
+
+See `DEPLOYMENT.md` for complete step-by-step instructions.
+
+## Testing
+
+Use [MCP Inspector](https://github.com/modelcontextprotocol/inspector) to test:
+```bash
+npm install -g @modelcontextprotocol/inspector
+mcp-inspector
+```
+
+Connect to your deployed server's SSE endpoint: `https://your-app-url/sse`
+
+## Architecture
+
+- **Framework**: FastMCP for simplified MCP server development
+- **API**: National Weather Service REST API
+- **Transport**: Server-Sent Events (SSE) only
+- **Deployment**: Containerized with Docker, hosted on IBM Cloud Code Engine
+
+
 
 ### Transport Modes
 
-- **stdio**: For local development and MCP client integration
 - **SSE**: For production deployment on Code Engine and web-based access
 
 ## API Reference
